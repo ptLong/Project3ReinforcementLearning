@@ -9,6 +9,7 @@
 import mdp, util
 
 from learningAgents import ValueEstimationAgent
+from Tkconstants import ALL
 
 class ValueIterationAgent(ValueEstimationAgent):
   """
@@ -29,15 +30,26 @@ class ValueIterationAgent(ValueEstimationAgent):
           mdp.getStates()
           mdp.getPossibleActions(state)
           mdp.getTransitionStatesAndProbs(state, action)
+              Returns list of (nextState, prob) pairs
           mdp.getReward(state, action, nextState)
     """
     self.mdp = mdp
     self.discount = discount
     self.iterations = iterations
     self.values = util.Counter() # A Counter is a dict with default 0
-     
-    "*** YOUR CODE HERE ***"
     
+    self.new_values = util.Counter()
+    
+    for i in range(self.iterations):
+        cal_values = util.Counter()
+        for state in self.mdp.getStates():
+            if len(self.mdp.getPossibleActions(state)) == 0:
+                continue
+            QValues = [self.getQValue(state, action) for action in self.mdp.getPossibleActions(state)]
+            cal_values[state] = max(QValues)
+        self.values = cal_values
+        
+      
   def getValue(self, state):
     """
       Return the value of the state (computed in __init__).
@@ -53,8 +65,13 @@ class ValueIterationAgent(ValueEstimationAgent):
       necessarily create this quantity and you may have
       to derive it on the fly.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    returnQ = 0
+    for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+        reward = self.mdp.getReward(state, action, nextState)
+        sprime_value = self.getValue(nextState)
+        
+        returnQ += prob*(reward + self.discount*sprime_value)       
+    return returnQ
 
   def getPolicy(self, state):
     """
@@ -65,7 +82,15 @@ class ValueIterationAgent(ValueEstimationAgent):
       terminal state, you should return None.
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    possible_actions = self.mdp.getPossibleActions(state)
+    if len(possible_actions) == 0:
+        return None
+    else:
+        possible_QValues = [(self.getQValue(state, action), action) for action in possible_actions]
+    
+    possible_QValues.sort(reverse=True)
+    return possible_QValues[0][1]
+    
 
   def getAction(self, state):
     "Returns the policy at the state (no exploration)."
